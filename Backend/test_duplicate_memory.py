@@ -13,7 +13,6 @@ Run:  python test_duplicate_memory.py
 """
 
 
-
 sys.path.append(".")
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

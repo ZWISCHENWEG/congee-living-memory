@@ -76,18 +76,47 @@ RECALL_QUESTION = "Why was pricing removed?"
 
 # Words that, if a node contains them, hint the node came from the MEETING side.
 MEETING_HINTS = {
-    "nadia", "arjun", "enterprise", "prospect", "hesitat", "sales team",
-    "self-serve", "signpost", "account", "growth", "revenue", "buyer",
+    "nadia",
+    "arjun",
+    "enterprise",
+    "prospect",
+    "hesitat",
+    "sales team",
+    "self-serve",
+    "signpost",
+    "account",
+    "growth",
+    "revenue",
+    "buyer",
 }
 # Words that hint a node came from the COMMIT / code side.
 COMMIT_HINTS = {
-    "hero.tsx", "plancards", "commit", "sha", "cta", "tier card", "package menu",
-    "hero.css", "plan-grid", ".tsx", ".css", "repository", "branch",
+    "hero.tsx",
+    "plancards",
+    "commit",
+    "sha",
+    "cta",
+    "tier card",
+    "package menu",
+    "hero.css",
+    "plan-grid",
+    ".tsx",
+    ".css",
+    "repository",
+    "branch",
 }
 # Words that would indicate a *synthesized abstraction* (the prize).
 CONCEPT_HINTS = {
-    "conversion", "enterprise", "strategy", "decision", "goal", "objective",
-    "positioning", "acquisition", "funnel", "growth",
+    "conversion",
+    "enterprise",
+    "strategy",
+    "decision",
+    "goal",
+    "objective",
+    "positioning",
+    "acquisition",
+    "funnel",
+    "growth",
 }
 
 
@@ -120,7 +149,9 @@ def kv(key: str, value: Any) -> None:
 
 def short(value: Any, limit: int = 240) -> str:
     text = str(value).replace("\n", " ⏎ ")
-    return text if len(text) <= limit else text[:limit] + f"… (+{len(text) - limit} chars)"
+    return (
+        text if len(text) <= limit else text[:limit] + f"… (+{len(text) - limit} chars)"
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -157,9 +188,17 @@ def import_cognee() -> Any:
 
     sub("Public callables detected on `cognee`")
     interesting = [
-        "add", "cognify", "memify", "search",          # classic granular API
-        "remember", "recall", "improve", "forget",     # v1.0 high-level API
-        "prune", "config", "visualize_graph",
+        "add",
+        "cognify",
+        "memify",
+        "search",  # classic granular API
+        "remember",
+        "recall",
+        "improve",
+        "forget",  # v1.0 high-level API
+        "prune",
+        "config",
+        "visualize_graph",
     ]
     capabilities = {}
     for name in interesting:
@@ -172,7 +211,7 @@ def import_cognee() -> Any:
     if capabilities.get("add") and capabilities.get("cognify"):
         strategy = "classic"  # add -> cognify -> memify -> search
     elif capabilities.get("remember"):
-        strategy = "v1"       # remember -> recall
+        strategy = "v1"  # remember -> recall
     else:
         log("❌ Neither classic (add+cognify) nor v1 (remember) API is available.")
         raise SystemExit(1)
@@ -191,8 +230,11 @@ def check_llm_config() -> None:
     # vars (names vary slightly across versions). We only *report* — we never
     # hardcode a key.
     candidates = [
-        "LLM_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
-        "LLM_PROVIDER", "LLM_MODEL",
+        "LLM_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "LLM_PROVIDER",
+        "LLM_MODEL",
     ]
     any_key = False
     for name in candidates:
@@ -521,13 +563,15 @@ def find_bridges(nodes: list[dict], edges: list[dict]) -> list[dict]:
         lexical = any(h in n["label"].lower() for h in CONCEPT_HINTS)
 
         if structural or (lexical and neigh):
-            bridges.append({
-                "node": n,
-                "structural": structural,
-                "lexical": lexical,
-                "neighbor_sides": sorted(neigh_sides | own_sides),
-                "degree": len(neigh),
-            })
+            bridges.append(
+                {
+                    "node": n,
+                    "structural": structural,
+                    "lexical": lexical,
+                    "neighbor_sides": sorted(neigh_sides | own_sides),
+                    "degree": len(neigh),
+                }
+            )
 
     if not bridges:
         log("❌ NO bridge candidate found.")
@@ -657,7 +701,9 @@ def _print_supporting(answer: Any, nodes: list[dict]) -> None:
 # --------------------------------------------------------------------------- #
 #  Verdict
 # --------------------------------------------------------------------------- #
-def verdict(nodes: list[dict], edges: list[dict], bridges: list[dict], enriched: bool) -> None:
+def verdict(
+    nodes: list[dict], edges: list[dict], bridges: list[dict], enriched: bool
+) -> None:
     banner("VERDICT — WHAT DID WE LEARN?")
     graph_built = bool(nodes)
     connected = bool(edges)
@@ -683,16 +729,24 @@ def verdict(nodes: list[dict], edges: list[dict], bridges: list[dict], enriched:
         log("   LLM is told which abstractions to synthesize. Still legitimate Cognee")
         log("   use — we define the vocabulary; Cognee does the reasoning.")
     elif graph_built and not connected:
-        log("🔴 FAIL (disconnected): Cognee extracted nodes but did NOT connect the two")
+        log(
+            "🔴 FAIL (disconnected): Cognee extracted nodes but did NOT connect the two"
+        )
         log("   sources at all. The two documents live as isolated islands. A shared")
         log("   ontology / graph_model is almost certainly required — test that next.")
     elif graph_built:
-        log("🔴 FAIL (no bridge): The graph is connected internally but the meeting and")
-        log("   the commits were never linked. Cognee's default extraction did not find")
+        log(
+            "🔴 FAIL (no bridge): The graph is connected internally but the meeting and"
+        )
+        log(
+            "   the commits were never linked. Cognee's default extraction did not find"
+        )
         log("   the shared business concept. Next: guided ontology, or an explicit")
         log("   enrichment step that scores candidate cross-source links.")
     else:
-        log("⛔ HARD FAIL: No graph was built at all. Check the log above for the first")
+        log(
+            "⛔ HARD FAIL: No graph was built at all. Check the log above for the first"
+        )
         log("   ❌ — most commonly a missing LLM API key or a cognify() exception.")
 
     print()
@@ -716,7 +770,9 @@ async def main() -> None:
     try:
         await reset_state(cognee)
         meeting_text, commits_text = load_sources()
-        build = await ingest_and_build(cognee, caps, strategy, meeting_text, commits_text)
+        build = await ingest_and_build(
+            cognee, caps, strategy, meeting_text, commits_text
+        )
         stage_timings = build["timings"]
 
         nodes, edges = await fetch_graph(cognee)
