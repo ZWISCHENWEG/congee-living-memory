@@ -21,6 +21,15 @@ async def run():
     from app.db import init_db, session
     from app.main import app
 
+
+    from tests_mock import MockAIProvider, MockEmbeddingProvider
+    from app.services.ai import get_ai_provider
+    from app.services.embedding.factory import get_embedding_provider
+    app.dependency_overrides[get_ai_provider] = lambda: MockAIProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: MockEmbeddingProvider()
+
+
+
     init_db()
     with session() as conn:
         conn.execute("DELETE FROM memories")

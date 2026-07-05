@@ -8,6 +8,15 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 
 async def run():
     from app.main import app
+
+
+    from tests_mock import MockAIProvider, MockEmbeddingProvider
+    from app.services.ai import get_ai_provider
+    from app.services.embedding.factory import get_embedding_provider
+    app.dependency_overrides[get_ai_provider] = lambda: MockAIProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: MockEmbeddingProvider()
+
+
     from app.db import session, init_db
     
     init_db()
