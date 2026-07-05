@@ -1,0 +1,27 @@
+{
+  "repository": "acme-website",
+  "branch": "main",
+  "commits": [
+    {
+      "sha": "a1b2c3d",
+      "date": "2026-05-03",
+      "author": "Arjun",
+      "message": "hero.tsx: drop the tier cards, add a Contact Sales CTA",
+      "body": "Remove the package menu from the top of the landing page. Big accounts now get a direct button to reach the team instead of scrolling a list of plans.",
+      "files": [
+        "src/components/hero.tsx",
+        "src/components/PlanCards.tsx"
+      ]
+    },
+    {
+      "sha": "e4f5g6h",
+      "date": "2026-05-03",
+      "author": "Arjun",
+      "message": "styles: remove plan-grid layout, widen hero CTA band",
+      "body": "Follow-up styling after the package menu was taken out of the hero.",
+      "files": [
+        "src/styles/hero.css"
+      ]
+    }
+  ]
+}

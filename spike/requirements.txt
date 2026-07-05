@@ -1,0 +1,3 @@
+# Milestone 0 spike — isolated dependencies (NOT tied to the backend).
+# Cognee is heavy (500MB–2GB). Install in a throwaway venv, not the backend venv.
+cognee
