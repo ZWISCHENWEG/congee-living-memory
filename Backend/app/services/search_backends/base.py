@@ -1,24 +1,25 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+
 from app.schemas.search import SearchResultSchema
+
 
 class SearchBackend(ABC):
     """Abstract base class for search backends."""
-    
+
     @property
     @abstractmethod
     def name(self) -> str:
         """Name of the search backend."""
         pass
-        
+
     @abstractmethod
     def search(
         self,
-        query_embedding: Optional[List[float]],
+        query_embedding: list[float] | None,
         query_text: str,
-        limit: Optional[int] = None,
-        similarity_threshold: Optional[float] = None
-    ) -> List[SearchResultSchema]:
+        limit: int | None = None,
+        similarity_threshold: float | None = None,
+    ) -> list[SearchResultSchema]:
         """Search memories synchronously.
 
         If query_embedding is provided, the backend should attempt a semantic search.
@@ -30,9 +31,9 @@ class SearchBackend(ABC):
     @abstractmethod
     def similarity_search(
         self,
-        query_embedding: Optional[List[float]],
+        query_embedding: list[float] | None,
         top_k: int = 5,
-    ) -> List[SearchResultSchema]:
+    ) -> list[SearchResultSchema]:
         """Return the top_k memories by *raw cosine similarity* (score = cosine).
 
         Unlike `search`, this applies no threshold and no composite ranking — it

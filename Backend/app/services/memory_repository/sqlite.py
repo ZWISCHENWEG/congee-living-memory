@@ -1,9 +1,10 @@
-from typing import Optional, List, Tuple
 from app.db import session
 from app.services.memory_repository.base import MemoryRepository
 
 #: Columns returned for read operations (keeps SELECTs consistent).
-_MEMORY_COLUMNS = "id, content, created_at, tags, type, importance, usage_count, last_accessed, updated_at"
+_MEMORY_COLUMNS = (
+    "id, content, created_at, tags, type, importance, usage_count, last_accessed, updated_at"
+)
 
 
 class SQLiteMemoryRepository(MemoryRepository):
@@ -15,7 +16,7 @@ class SQLiteMemoryRepository(MemoryRepository):
         content: str,
         created_at: str,
         tags_json: str,
-        embedding_json: Optional[str],
+        embedding_json: str | None,
         type: str = "other",
         importance: float = 0.5,
     ) -> None:
@@ -33,12 +34,10 @@ class SQLiteMemoryRepository(MemoryRepository):
         with session() as conn:
             conn.execute("DELETE FROM memories WHERE id = ?", (memory_id,))
 
-    def get_by_id(self, memory_id: str) -> Optional[dict]:
+    def get_by_id(self, memory_id: str) -> dict | None:
         with session() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                f"SELECT {_MEMORY_COLUMNS} FROM memories WHERE id = ?", (memory_id,)
-            )
+            cursor.execute(f"SELECT {_MEMORY_COLUMNS} FROM memories WHERE id = ?", (memory_id,))
             row = cursor.fetchone()
             return dict(row) if row else None
 
@@ -46,7 +45,7 @@ class SQLiteMemoryRepository(MemoryRepository):
         self,
         memory_id: str,
         content: str,
-        embedding_json: Optional[str],
+        embedding_json: str | None,
         type: str,
         importance: float,
         updated_at: str,
@@ -72,7 +71,7 @@ class SQLiteMemoryRepository(MemoryRepository):
                 (last_accessed, memory_id),
             )
 
-    def get_memories(self, page: int, limit: int, search: Optional[str]) -> Tuple[List[dict], int]:
+    def get_memories(self, page: int, limit: int, search: str | None) -> tuple[list[dict], int]:
         with session() as conn:
             cursor = conn.cursor()
 

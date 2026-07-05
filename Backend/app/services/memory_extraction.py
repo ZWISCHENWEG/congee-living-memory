@@ -124,7 +124,9 @@ class MemoryExtractionService:
             payload = json.loads(_strip_json(result.text))
             extraction = MemoryExtraction.model_validate(payload)
         except (json.JSONDecodeError, ValidationError, TypeError) as e:
-            logger.warning("Failed to parse memory classification (%s): %r", type(e).__name__, result.text)
+            logger.warning(
+                "Failed to parse memory classification (%s): %r", type(e).__name__, result.text
+            )
             return MemoryExtraction(action="none")
 
         logger.info(
@@ -143,7 +145,9 @@ class MemoryExtractionService:
             payload = json.loads(_strip_json(result.text))
             decision = ConflictDecision.model_validate(payload)
         except (AIProviderError, json.JSONDecodeError, ValidationError, TypeError) as e:
-            logger.warning("Conflict decision failed (%s); defaulting to no-replace", type(e).__name__)
+            logger.warning(
+                "Conflict decision failed (%s); defaulting to no-replace", type(e).__name__
+            )
             return ConflictDecision(replace=False, confidence=0.0, reason="decision unavailable")
 
         logger.info(

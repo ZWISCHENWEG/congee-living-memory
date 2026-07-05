@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, List, Tuple
+
 
 class MemoryRepository(ABC):
     """Abstract base class for memory persistence."""
@@ -11,7 +11,7 @@ class MemoryRepository(ABC):
         content: str,
         created_at: str,
         tags_json: str,
-        embedding_json: Optional[str],
+        embedding_json: str | None,
         type: str = "other",
         importance: float = 0.5,
     ) -> None:
@@ -28,7 +28,7 @@ class MemoryRepository(ABC):
         pass
 
     @abstractmethod
-    def get_memories(self, page: int, limit: int, search: Optional[str]) -> Tuple[List[dict], int]:
+    def get_memories(self, page: int, limit: int, search: str | None) -> tuple[list[dict], int]:
         """Fetch a paginated list of memories and the total count.
 
         Returns:
@@ -40,7 +40,7 @@ class MemoryRepository(ABC):
         pass
 
     @abstractmethod
-    def get_by_id(self, memory_id: str) -> Optional[dict]:
+    def get_by_id(self, memory_id: str) -> dict | None:
         """Fetch a single memory row by ID, or None if it does not exist."""
         pass
 
@@ -49,7 +49,7 @@ class MemoryRepository(ABC):
         self,
         memory_id: str,
         content: str,
-        embedding_json: Optional[str],
+        embedding_json: str | None,
         type: str,
         importance: float,
         updated_at: str,

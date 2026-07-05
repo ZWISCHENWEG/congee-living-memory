@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import List, Tuple
 
 from fastapi import Depends
 
@@ -14,6 +13,7 @@ from app.services.prompt_builder import PromptBuilder, get_prompt_builder
 from app.services.search import SearchService, get_search_service
 
 logger = logging.getLogger(__name__)
+
 
 class ChatService:
     """Service for orchestrating memory retrieval, AI generation, and the
@@ -35,7 +35,7 @@ class ChatService:
 
     async def generate_response(
         self, user_message: str
-    ) -> Tuple[GenerationResult, List[SearchResultSchema], MemoryAction]:
+    ) -> tuple[GenerationResult, list[SearchResultSchema], MemoryAction]:
         """Process a user message: retrieve memories, generate a reply, and run
         the autonomous memory pipeline concurrently with generation."""
 
@@ -68,6 +68,7 @@ class ChatService:
         logger.info("Memory action: %s", memory_action.status)
 
         return result, memories, memory_action
+
 
 def get_chat_service(
     provider: AIProvider = Depends(get_ai_provider),

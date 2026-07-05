@@ -58,10 +58,11 @@ class Settings(BaseSettings):
     rank_weight_usage: float = 0.10
 
     # --- AI providers: Gemini ---
-    # Optional. Kept unset by default so the app boots without Gemini wired up
-    # (the provider is not integrated yet). No key is hardcoded; only the model
-    # name carries a sensible default. Read from the standard, unprefixed
-    # `GEMINI_*` names (the explicit alias bypasses the `CHRONOS_` env prefix).
+    # The key is optional so the app still boots without it: the AI/embedding
+    # factories fall back to unavailable/null providers and chat degrades
+    # gracefully instead of crashing. No key is hardcoded; only the model name
+    # carries a sensible default. Read from the standard, unprefixed `GEMINI_*`
+    # names (the explicit alias bypasses the `CHRONOS_` env prefix).
     gemini_api_key: str | None = Field(default=None, validation_alias="GEMINI_API_KEY")
     gemini_model: str = Field(default="gemini-2.5-flash", validation_alias="GEMINI_MODEL")
 

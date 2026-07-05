@@ -6,7 +6,7 @@ separate from the existing `memories`/`chat` schemas so Phase 1/2 contracts stay
 untouched.
 """
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -45,7 +45,7 @@ class MemoryExtraction(BaseModel):
     """
 
     action: Literal["save", "forget", "none"] = "none"
-    memory: Optional[str] = None
+    memory: str | None = None
     type: MemoryCategory = "other"
     importance: float = Field(default=0.5, ge=0.0, le=1.0)
 
@@ -70,11 +70,11 @@ class MemoryAction(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     status: MemoryStatus
-    memory: Optional[str] = None
-    memory_id: Optional[str] = None
-    type: Optional[str] = None
-    importance: Optional[float] = None
-    detail: Optional[str] = None
+    memory: str | None = None
+    memory_id: str | None = None
+    type: str | None = None
+    importance: float | None = None
+    detail: str | None = None
 
 
 class ConflictResolution(BaseModel):

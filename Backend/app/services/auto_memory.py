@@ -72,7 +72,9 @@ class AutoMemoryService:
         matches = await self.search_service.find_similar(target, top_k=1)
         if not matches or (matches[0].score or 0.0) < settings.forget_threshold:
             logger.info("Forget request matched no stored memory: %r", target)
-            return MemoryAction(status="ignored", memory=target, detail="no matching memory to forget")
+            return MemoryAction(
+                status="ignored", memory=target, detail="no matching memory to forget"
+            )
 
         match = matches[0]
         self.memory_service.delete_memory(match.id)  # logs "Memory deleted"

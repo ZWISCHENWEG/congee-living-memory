@@ -1,29 +1,30 @@
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import Depends
 
-from app.schemas.memories import MemoryCreate, MemorySchema, MemoriesResponse, MetaSchema
-from app.services.embedding import get_embedding_provider, EmbeddingProvider, EmbeddingGenerationError, EmbeddingProviderUnavailableError
-from app.services.memory_repository import get_memory_repository, MemoryRepository
+from app.schemas.memories import MemoriesResponse, MemoryCreate, MemorySchema, MetaSchema
+from app.services.embedding import (
+    EmbeddingGenerationError,
+    EmbeddingProvider,
+    EmbeddingProviderUnavailableError,
+    get_embedding_provider,
+)
+from app.services.memory_repository import MemoryRepository, get_memory_repository
 
 logger = logging.getLogger(__name__)
 
+
 class MemoryService:
     """Service orchestrating memory creation, retrieval, and deletion."""
-    
-    def __init__(
-        self,
-        embedding_provider: EmbeddingProvider,
-        repository: MemoryRepository
-    ):
+
+    def __init__(self, embedding_provider: EmbeddingProvider, repository: MemoryRepository):
         self.embedding_provider = embedding_provider
         self.repository = repository
-        
-    async def _embed(self, content: str) -> Optional[str]:
+
+    async def _embed(self, content: str) -> str | None:
         """Generate a JSON-encoded embedding, or None on failure (resilient)."""
         logger.info("Using EmbeddingProvider: %s", self.embedding_provider.__class__.__name__)
         try:
@@ -41,7 +42,7 @@ class MemoryService:
     async def create_memory(self, memory: MemoryCreate) -> MemorySchema:
         """Create a new memory, generate its embedding, and store it."""
         mem_id = f"mem_{uuid.uuid4().hex[:12]}"
-        created_at = datetime.now(timezone.utc).isoformat()
+        created_at = datetime.now(UTC).isoformat()
         tags_json = json.dumps(memory.tags) if memory.tags else "[]"
         mem_type = memory.type or "other"
         importance = memory.importance if memory.importance is not None else 0.5
@@ -76,7 +77,7 @@ class MemoryService:
 
     async def update_memory(
         self, memory_id: str, content: str, type: str, importance: float
-    ) -> Optional[MemorySchema]:
+    ) -> MemorySchema | None:
         """Replace an existing memory's content/embedding/metadata in place.
 
         Returns the updated memory, or None if `memory_id` does not exist.
@@ -86,7 +87,7 @@ class MemoryService:
             logger.warning("Update requested for missing memory %s", memory_id)
             return None
 
-        updated_at = datetime.now(timezone.utc).isoformat()
+        updated_at = datetime.now(UTC).isoformat()
         embedding_json = await self._embed(content)
         self.repository.update_memory(
             memory_id=memory_id,
@@ -115,7 +116,7 @@ class MemoryService:
         (Features 8 & 9). Best-effort: logs but never raises into the chat flow."""
         if not memory_ids:
             return
-        last_accessed = datetime.now(timezone.utc).isoformat()
+        last_accessed = datetime.now(UTC).isoformat()
         for memory_id in memory_ids:
             try:
                 self.repository.mark_used(memory_id, last_accessed)
@@ -127,32 +128,32 @@ class MemoryService:
         self.repository.delete_memory(memory_id)
         logger.info("Memory deleted: %s", memory_id)
 
-    def get_memories(self, page: int, limit: int, search: Optional[str] = None) -> MemoriesResponse:
+    def get_memories(self, page: int, limit: int, search: str | None = None) -> MemoriesResponse:
         """Retrieve paginated memories."""
         rows, total = self.repository.get_memories(page, limit, search)
 
         data = []
         for row in rows:
             tags = json.loads(row["tags"]) if row["tags"] else []
-            data.append(MemorySchema(
-                id=row["id"],
-                content=row["content"],
-                created_at=row["created_at"],
-                tags=tags,
-                type=row["type"],
-                importance=row["importance"],
-                usage_count=row["usage_count"],
-                last_accessed=row["last_accessed"],
-                updated_at=row["updated_at"],
-            ))
+            data.append(
+                MemorySchema(
+                    id=row["id"],
+                    content=row["content"],
+                    created_at=row["created_at"],
+                    tags=tags,
+                    type=row["type"],
+                    importance=row["importance"],
+                    usage_count=row["usage_count"],
+                    last_accessed=row["last_accessed"],
+                    updated_at=row["updated_at"],
+                )
+            )
 
-        return MemoriesResponse(
-            data=data,
-            meta=MetaSchema(total=total, page=page, limit=limit)
-        )
+        return MemoriesResponse(data=data, meta=MetaSchema(total=total, page=page, limit=limit))
+
 
 def get_memory_service(
     embedding_provider: EmbeddingProvider = Depends(get_embedding_provider),
-    repository: MemoryRepository = Depends(get_memory_repository)
+    repository: MemoryRepository = Depends(get_memory_repository),
 ) -> MemoryService:
     return MemoryService(embedding_provider, repository)

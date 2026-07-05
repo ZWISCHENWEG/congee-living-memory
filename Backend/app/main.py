@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db import init_db
-from app.routes import health, root, memories, chat, search
+from app.routes import chat, health, memories, memory_resolve, root, search
 
 # Configure basic logging for the application
 logging.basicConfig(
@@ -60,11 +60,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Routers (only "/" and "/health" for now).
+    # Routers: system (/, /health), memories CRUD, chat, search, and the
+    # conflict-resolution endpoint for the autonomous memory engine.
     app.include_router(root.router)
     app.include_router(health.router)
-    
-    from app.routes import memories, chat, search, memory_resolve
     app.include_router(memories.router)
     app.include_router(chat.router)
     app.include_router(search.router)

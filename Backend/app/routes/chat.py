@@ -1,9 +1,11 @@
 import logging
 import uuid
-from fastapi import APIRouter, HTTPException, Depends
+
+from fastapi import APIRouter, Depends, HTTPException
+
 from app.schemas.chat import ChatRequest, ChatResponse
-from app.services.chat import get_chat_service, ChatService
 from app.services.ai import AIGenerationError, AIProviderUnavailableError
+from app.services.chat import ChatService, get_chat_service
 
 logger = logging.getLogger(__name__)
 
@@ -12,15 +14,15 @@ router = APIRouter(tags=["chat"])
 
 @router.post("/chat", response_model=ChatResponse)
 async def handle_chat(
-    chat_req: ChatRequest,
-    chat_service: ChatService = Depends(get_chat_service)
+    chat_req: ChatRequest, chat_service: ChatService = Depends(get_chat_service)
 ) -> ChatResponse:
     """Process a chat message using the configured AI provider."""
     try:
         result, memories, memory_action = await chat_service.generate_response(chat_req.message)
     except AIProviderUnavailableError as e:
         logger.exception("AI provider unavailable: %s", e)
-        # 503 is appropriate because a required backend service (the AI model) is unconfigured/unavailable
+        # 503 is appropriate because a required backend service (the AI model)
+        # is unconfigured/unavailable
         raise HTTPException(status_code=503, detail="AI service is currently unavailable.")
     except AIGenerationError as e:
         logger.exception("AI generation failed: %s", e)

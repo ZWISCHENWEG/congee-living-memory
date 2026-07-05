@@ -1,20 +1,17 @@
 # Congee API Contract
 
 ## Overview
-This document defines the strict API contract between the Chronos (FastAPI backend) and the Congee frontend. Both the frontend and backend teams must adhere to these specifications.
+This document defines the API contract between the Chronos (FastAPI backend) and
+the Congee frontend. It reflects the **implemented** behaviour of `Backend/app`.
 
 ## Base URL
-`/api/v1` (Relative to backend URL, e.g., `http://127.0.0.1:8000/api/v1`)
+No version prefix. Endpoints are mounted at the backend root, e.g.
+`http://127.0.0.1:8000/chat`. In development the Vite dev server proxies
+`/api/*` → `http://127.0.0.1:8000/*` (see `Frontend/vite.config.ts`).
 
 ## Authentication
-All protected routes require a Bearer token in the `Authorization` header:
-`Authorization: Bearer <token>`
-
----
-
-## State Transition Flow (UI)
-Every endpoint must handle the following UI state transitions on the frontend:
-`Request` -> `Loading (Skeleton)` -> `Success (Data)` -> `Empty (Empty State)` -> `Error (Toast/Boundary)` -> `Unauthorized (Redirect)` -> `Retry`
+None. All routes are currently public — the engine is a single-user demo.
+Auth (Bearer tokens / `fastapi-users`) is on the roadmap; see "Known limitations".
 
 ---
 
@@ -22,125 +19,125 @@ Every endpoint must handle the following UI state transitions on the frontend:
 
 ### System
 
-#### `GET /health`
-Check API health status.
-- **Request Body:** None
-- **States:** Loading -> Success -> Error -> Retry
-- **Response:** `200 OK`
+#### `GET /`
+Basic liveness / project banner.
+- **Response `200 OK`:**
   ```json
-  {
-    "status": "ok",
-    "version": "1.0.0"
-  }
+  { "project": "Chronos", "status": "running" }
+  ```
+
+#### `GET /health`
+Health check.
+- **Response `200 OK`:**
+  ```json
+  { "status": "ok", "version": "1.0.0" }
   ```
 
 ### Memories
 
 #### `GET /memories`
-Retrieve a paginated list of memories.
-- **Query Params:**
-  - `page` (int, default: 1)
-  - `limit` (int, default: 20)
-  - `search` (string, optional)
-- **States:** Loading -> Skeleton -> Success -> Cards -> No Memories -> Empty State -> 500 -> Toast -> Retry
-- **Response:** `200 OK`
+Retrieve a paginated list of memories (newest first).
+- **Query Params:** `page` (int, default 1), `limit` (int, default 20), `search` (string, optional; SQL `LIKE` on content)
+- **Response `200 OK`:**
   ```json
   {
     "data": [
       {
-        "id": "mem_123",
-        "content": "Had a great meeting about the new AI features.",
-        "created_at": "2026-07-05T10:00:00Z",
-        "tags": ["meeting", "ai"]
+        "id": "mem_1a2b3c4d5e6f",
+        "content": "My favorite language is Python.",
+        "created_at": "2026-07-05T10:00:00+00:00",
+        "tags": ["coding"],
+        "type": "preference",
+        "importance": 0.75,
+        "usage_count": 3,
+        "last_accessed": "2026-07-05T12:00:00+00:00",
+        "updated_at": null
       }
     ],
-    "meta": {
-      "total": 1,
-      "page": 1,
-      "limit": 20
-    }
+    "meta": { "total": 1, "page": 1, "limit": 20 }
   }
   ```
 
 #### `POST /memory`
-Ingest a new memory.
-- **Request Body:**
+Manually ingest a new memory. Generates and stores an embedding.
+- **Request Body:** (`type` and `importance` optional; default to `"other"` / `0.5`)
   ```json
-  {
-    "content": "string",
-    "tags": ["string"] // optional
-  }
+  { "content": "string", "tags": ["string"], "type": "preference", "importance": 0.75 }
   ```
-- **States:** Loading (Optimistic UI) -> Success -> Error (Rollback) -> Toast -> Retry
-- **Response:** `201 Created`
-  ```json
-  {
-    "id": "mem_124",
-    "content": "string",
-    "created_at": "2026-07-05T10:15:00Z",
-    "tags": ["string"]
-  }
-  ```
+- **Response `201 Created`:** a single `MemorySchema` (same shape as an item in `GET /memories`).
 
 #### `DELETE /memory/{id}`
 Delete a memory by ID.
-- **Request Params:** `id` (string)
-- **States:** Loading (Optimistic UI) -> Success -> Error (Rollback) -> Toast -> Retry
-- **Response:** `204 No Content`
+- **Response `204 No Content`** (idempotent — no error if the id is absent).
+
+#### `POST /memory/resolve-conflict`
+Resolve a pending conflict surfaced by a chat turn whose `memory_action.status == "conflict"`.
+- **Request Body:**
+  ```json
+  {
+    "existing_id": "mem_1a2b3c4d5e6f",
+    "new_content": "I moved to Surat.",
+    "decision": "replace",           // or "keep"
+    "type": "location",
+    "importance": 0.85
+  }
+  ```
+- **Response `200 OK`:** a `MemoryAction` (`status` = `"updated"` on replace, `"ignored"` on keep).
+- **Errors:** `404 Not Found` if `existing_id` no longer exists.
 
 ### Chat
 
 #### `POST /chat`
-Send a message to the AI and receive a response, potentially creating or retrieving memories in the background.
+Send a message. The backend retrieves relevant memories, generates a reply, and
+**concurrently** runs the autonomous memory pipeline (extract → dedup →
+conflict/update/insert/forget).
 - **Request Body:**
   ```json
-  {
-    "message": "What did we discuss about AI features?",
-    "conversation_id": "conv_123" // optional
-  }
+  { "message": "What language do I like?", "conversation_id": "conv_123" }
   ```
-- **States:** Loading (Typing indicator) -> Success (Message Bubble) -> Error -> Toast -> Retry
-- **Response:** `200 OK`
+  `conversation_id` is optional; one is generated if omitted.
+- **Response `200 OK`:**
   ```json
   {
-    "id": "msg_456",
-    "reply": "You discussed the new AI features earlier today.",
+    "response": "You like Python.",
+    "used_memories": [
+      { "id": "mem_1a2b3c4d5e6f", "content": "My favorite language is Python.", "score": 0.91 }
+    ],
     "conversation_id": "conv_123",
-    "referenced_memories": ["mem_123"]
+    "memory_action": {
+      "status": "created",
+      "memory": "My favorite language is Python.",
+      "memory_id": "mem_1a2b3c4d5e6f",
+      "type": "preference",
+      "importance": 0.75,
+      "detail": null
+    }
   }
   ```
+  `memory_action.status` ∈ `created | updated | duplicate | conflict | deleted | ignored`.
+- **Errors:** `503` if no AI provider is configured; `502` if generation fails upstream.
 
 ### Search
 
 #### `GET /search`
-Perform a semantic search across memories.
-- **Query Params:** `q` (string)
-- **States:** Loading -> Skeleton -> Success -> Results -> No Results -> Empty State -> Error -> Toast
-- **Response:** `200 OK`
+Semantic search over memories, with keyword (`LIKE`) fallback when embeddings are
+unavailable.
+- **Query Params:** `q` (string, required, min length 1)
+- **Response `200 OK`:**
   ```json
   {
     "results": [
-      {
-        "id": "mem_123",
-        "content": "Had a great meeting about the new AI features.",
-        "score": 0.95
-      }
+      { "id": "mem_1a2b3c4d5e6f", "content": "My favorite language is Python.", "score": 0.95 }
     ]
   }
   ```
+  `score` is the composite rank for semantic hits, or `0.0` for keyword-fallback hits.
 
 ---
-## Error Format
-All errors will follow this standard format:
-- **Response:** `400 / 401 / 403 / 404 / 422 / 500`
-  ```json
-  {
-    "error": {
-      "code": "VALIDATION_ERROR",
-      "message": "Invalid request parameters",
-      "details": {
-        "content": "Field is required"
-      }
-    }
-  }
-  ```
+
+## Error format
+Errors use FastAPI's default envelope:
+```json
+{ "detail": "AI service is currently unavailable." }
+```
+Validation errors (`422`) return FastAPI's structured `detail` array.

@@ -1,3 +1,9 @@
+import logging
+import sys
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+
 """Phase 3 — Feature 6: Conflict detection + resolution.
 
 When a new fact conflicts with an existing one but the auto-replace confidence
@@ -11,29 +17,25 @@ value Gemini won't clear, forcing the conflict branch. Hits real Gemini.
 Run:  python test_conflict_memory.py
 """
 
-import asyncio
-import logging
-import sys
 
-from httpx import ASGITransport, AsyncClient
 
 sys.path.append(".")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 
-async def run():
+@pytest.mark.anyio
+async def test_conflict_memory():
     from app.config import settings
     from app.db import init_db, session
     from app.main import app
-
-
-    from tests_mock import MockAIProvider, MockEmbeddingProvider
     from app.services.ai import get_ai_provider
     from app.services.embedding.factory import get_embedding_provider
+    from tests_mock import MockAIProvider, MockEmbeddingProvider
+
     app.dependency_overrides[get_ai_provider] = lambda: MockAIProvider()
     app.dependency_overrides[get_embedding_provider] = lambda: MockEmbeddingProvider()
-
-
 
     init_db()
     with session() as conn:
@@ -95,7 +97,3 @@ async def run():
         settings.conflict_confidence = original_bar
 
     print("\n✅ test_conflict_memory PASSED")
-
-
-if __name__ == "__main__":
-    asyncio.run(run())

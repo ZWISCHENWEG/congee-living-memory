@@ -63,9 +63,7 @@ class GeminiProvider(AIProvider):
 
             # Ensure the raw payload is fully JSON-serializable using Pydantic's json mode
             raw_payload: dict[str, Any] = (
-                response.model_dump(mode="json")
-                if hasattr(response, "model_dump")
-                else {}
+                response.model_dump(mode="json") if hasattr(response, "model_dump") else {}
             )
 
             # response.text can be None if the generation was blocked (e.g., safety filters)
@@ -99,5 +97,6 @@ class GeminiProvider(AIProvider):
         except errors.APIError as e:
             return ProviderHealth(healthy=False, provider=self.name, detail=f"API Error: {e}")
         except Exception as e:
-            return ProviderHealth(healthy=False, provider=self.name, detail=f"Unexpected Error: {e}")
-
+            return ProviderHealth(
+                healthy=False, provider=self.name, detail=f"Unexpected Error: {e}"
+            )

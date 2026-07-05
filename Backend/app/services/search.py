@@ -1,27 +1,30 @@
 import logging
+
 from fastapi import Depends
+
 from app.schemas.search import SearchResultSchema
-from typing import List
-from app.services.embedding import get_embedding_provider, EmbeddingProvider, EmbeddingGenerationError, EmbeddingProviderUnavailableError
+from app.services.embedding import (
+    EmbeddingGenerationError,
+    EmbeddingProvider,
+    EmbeddingProviderUnavailableError,
+    get_embedding_provider,
+)
 from app.services.search_backends import SearchBackend
 from app.services.search_backends.factory import get_search_backend
 
 logger = logging.getLogger(__name__)
 
+
 class SearchService:
     """Service for orchestrating semantic memory search and retrieval."""
-    
-    def __init__(
-        self,
-        embedding_provider: EmbeddingProvider,
-        backend: SearchBackend
-    ):
+
+    def __init__(self, embedding_provider: EmbeddingProvider, backend: SearchBackend):
         self.embedding_provider = embedding_provider
         self.backend = backend
-        
-    async def search(self, query_text: str) -> List[SearchResultSchema]:
+
+    async def search(self, query_text: str) -> list[SearchResultSchema]:
         """Search memories using semantic embeddings, falling back to keyword search."""
-        
+
         query_embedding = None
         try:
             logger.info("Generating query embedding...")
@@ -30,13 +33,17 @@ class SearchService:
                 logger.info("Embedding generated successfully")
                 logger.info("Embedding dimensions: %d", len(query_embedding))
         except (EmbeddingGenerationError, EmbeddingProviderUnavailableError) as e:
-            logger.warning("Embedding generation failed for provider %s: %s", self.embedding_provider.name, type(e).__name__)
+            logger.warning(
+                "Embedding generation failed for provider %s: %s",
+                self.embedding_provider.name,
+                type(e).__name__,
+            )
             # Safely continue to fallback
-            
+
         results = self.backend.search(query_embedding, query_text)
         return results
 
-    async def find_similar(self, text: str, top_k: int = 5) -> List[SearchResultSchema]:
+    async def find_similar(self, text: str, top_k: int = 5) -> list[SearchResultSchema]:
         """Return the top_k memories by raw cosine similarity to `text`.
 
         Used by the autonomous memory engine for duplicate/conflict/forget
@@ -53,8 +60,9 @@ class SearchService:
             return []
         return self.backend.similarity_search(query_embedding, top_k=top_k)
 
+
 def get_search_service(
     embedding_provider: EmbeddingProvider = Depends(get_embedding_provider),
-    backend: SearchBackend = Depends(get_search_backend)
+    backend: SearchBackend = Depends(get_search_backend),
 ) -> SearchService:
     return SearchService(embedding_provider, backend)

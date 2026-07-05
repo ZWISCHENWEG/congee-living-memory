@@ -1,8 +1,9 @@
 """Database connectivity for Chronos.
 
-Thin SQLite layer using the standard library `sqlite3`. Business logic and
-schema (tables) will be added later — this module only provides connection
-management and lifecycle hooks so the app can start cleanly.
+Thin SQLite layer using the standard library `sqlite3`. Provides connection
+management (`get_connection`, `session`) and startup initialization (`init_db`),
+which creates the `memories` table and applies the additive Phase 3 column
+migrations idempotently.
 """
 
 import sqlite3
@@ -19,7 +20,7 @@ def _resolve_sqlite_path() -> Path:
     prefix = "sqlite:///"
     if not url.startswith(prefix):
         raise ValueError(f"Unsupported database_url (expected sqlite:///): {url!r}")
-    return Path(url[len(prefix):]).resolve()
+    return Path(url[len(prefix) :]).resolve()
 
 
 def get_connection() -> sqlite3.Connection:
