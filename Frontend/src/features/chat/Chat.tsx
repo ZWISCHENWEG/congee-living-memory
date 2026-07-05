@@ -33,9 +33,10 @@ export default function Chat() {
       {
         onSuccess: (data) => {
           const aiMsg: Message = {
-            id: data.id,
+            // The backend does not return a message id; generate one client-side.
+            id: `asst-${Date.now()}`,
             role: 'assistant',
-            content: data.reply,
+            content: data.response,
             timestamp: new Date().toISOString(),
           };
           setMessages((prev) => [...prev, aiMsg]);

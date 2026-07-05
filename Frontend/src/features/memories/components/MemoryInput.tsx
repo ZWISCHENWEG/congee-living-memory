@@ -17,6 +17,9 @@ export const MemoryInput = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { content: '' },
+    // onChange so `formState.isValid` tracks typing — otherwise the Save button
+    // (disabled on !isValid) stays greyed out until a submit fires.
+    mode: 'onChange',
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
