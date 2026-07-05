@@ -1,6 +1,8 @@
 # Environment
 .env
 .env.*
+# ...but keep committed example templates (no secrets, meant to be shared).
+!.env.example
 
 # Python
 .venv/
