@@ -18,7 +18,7 @@ def get_ai_provider() -> AIProvider:
     settings = get_settings()
 
     if settings.gemini_configured:
-        from app.services.ai.gemini import GeminiProvider
+        from app.services.ai.gemini_chat import GeminiProvider
         return GeminiProvider(
             api_key=settings.gemini_api_key,
             model=settings.gemini_model,

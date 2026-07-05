@@ -40,7 +40,22 @@ class Settings(BaseSettings):
 
     # --- Search ---
     search_limit: int = 10
-    similarity_threshold: float = 0.72
+    similarity_threshold: float = 0.65
+
+    # --- Phase 3: autonomous memory engine ---
+    # Similarity at/above which a candidate save is treated as a duplicate.
+    duplicate_threshold: float = 0.92
+    # Similarity band that flags a potential conflict/update (below duplicate).
+    conflict_threshold: float = 0.75
+    # Gemini confidence required to auto-replace on a detected conflict.
+    conflict_confidence: float = 0.90
+    # Similarity required to match a "forget X" request to a stored memory.
+    forget_threshold: float = 0.80
+    # Composite ranking weights (Feature 11). Should sum to 1.0.
+    rank_weight_similarity: float = 0.60
+    rank_weight_importance: float = 0.20
+    rank_weight_recency: float = 0.10
+    rank_weight_usage: float = 0.10
 
     # --- AI providers: Gemini ---
     # Optional. Kept unset by default so the app boots without Gemini wired up

@@ -4,6 +4,7 @@ Run in development with:
     uv run uvicorn app.main:app --reload
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,16 +12,35 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db import init_db
-from app.routes import health, root
+from app.routes import health, root, memories, chat, search
+
+# Configure basic logging for the application
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup/shutdown lifecycle."""
-    # Startup: verify database connectivity.
+    logger.info("Initializing database...")
     init_db()
+
+    logger.info("Loaded Gemini model: %s", settings.gemini_model)
+    logger.info("Gemini configured: %s", settings.gemini_configured)
+
+    if settings.gemini_api_key:
+        key = settings.gemini_api_key
+        safe_key = f"{key[:4]}********{key[-4:]}" if len(key) > 8 else "True"
+        logger.info("API key exists: %s", safe_key)
+    else:
+        logger.info("API key exists: False")
+
+    logger.info("Chronos backend started successfully.")
     yield
-    # Shutdown: nothing to tear down yet.
+    logger.info("Chronos backend shutting down.")
 
 
 def create_app() -> FastAPI:
@@ -44,10 +64,11 @@ def create_app() -> FastAPI:
     app.include_router(root.router)
     app.include_router(health.router)
     
-    from app.routes import memories, chat, search
+    from app.routes import memories, chat, search, memory_resolve
     app.include_router(memories.router)
     app.include_router(chat.router)
     app.include_router(search.router)
+    app.include_router(memory_resolve.router)
 
     return app
 

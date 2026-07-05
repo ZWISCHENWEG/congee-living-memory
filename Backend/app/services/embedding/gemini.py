@@ -4,7 +4,7 @@ from app.services.embedding.base import EmbeddingProvider, EmbeddingGenerationEr
 class GeminiEmbeddingProvider(EmbeddingProvider):
     """Google Gemini embedding provider implementation."""
     
-    def __init__(self, api_key: str, model: str = "text-embedding-004"):
+    def __init__(self, api_key: str, model: str = "gemini-embedding-2"):
         self.api_key = api_key
         self.model = model
         self._client = genai.Client(api_key=self.api_key)

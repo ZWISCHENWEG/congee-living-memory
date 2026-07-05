@@ -4,25 +4,40 @@ from app.schemas.search import SearchResultSchema
 class PromptBuilder:
     """Builds the AI prompt by combining system instructions, memories, and user messages."""
     
-    def __init__(self, max_memories: int = 10):
+    def __init__(self, max_memories: int = 5):
         self.max_memories = max_memories
 
     def build(self, user_message: str, memories: List[SearchResultSchema]) -> str:
-        """Construct the prompt using a strict layout without polluting the AI provider."""
-        system_instruction = "System:\nYou are Congee, a living memory engine. Use the provided memories to answer the user's message accurately and contextually."
+        """Construct the production prompt using the strict layout."""
+        system_instruction = (
+            "You are Chronos.\n"
+            "You are an intelligent assistant with long-term memory.\n"
+            "You are provided with memories retrieved from semantic search.\n"
+            "Use them naturally.\n"
+            "Never mention vector search.\n"
+            "Never say \"according to memory database.\"\n"
+            "If memories conflict,\n"
+            "prefer the newest one.\n"
+            "If no memories are relevant,\n"
+            "ignore the memory section."
+        )
         
-        # Enforce strict retrieval limit to prevent massive prompts
         safe_memories = memories[:self.max_memories]
         
         if safe_memories:
-            memory_texts = "\n".join([f"- {m.content}" for m in safe_memories])
-            memory_section = f"Relevant Memories:\n{memory_texts}"
+            memory_texts = "\n".join([f"• {m.content}" for m in safe_memories])
+            memory_section = f"Relevant Memories\n{memory_texts}"
         else:
-            memory_section = "Relevant Memories:\n(No relevant memories found)"
+            memory_section = ""
             
-        user_section = f"User:\n{user_message}"
+        user_section = f"User:\n{user_message}\n\nAssistant:"
         
-        return f"{system_instruction}\n\n{memory_section}\n\n{user_section}"
+        parts = [system_instruction]
+        if memory_section:
+            parts.append(memory_section)
+        parts.append(user_section)
+        
+        return "\n\n----------------------------------\n\n".join(parts)
 
 def get_prompt_builder() -> PromptBuilder:
     return PromptBuilder()

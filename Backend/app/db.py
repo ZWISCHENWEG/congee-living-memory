@@ -46,11 +46,24 @@ def session() -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
+#: Phase 3 columns added to `memories` via idempotent migration. Each is applied
+#: independently so re-runs (and partially-migrated databases) are safe. Existing
+#: rows inherit the DEFAULT; no user data is ever dropped.
+_MEMORY_MIGRATIONS: tuple[str, ...] = (
+    "ALTER TABLE memories ADD COLUMN embedding TEXT",
+    "ALTER TABLE memories ADD COLUMN type TEXT DEFAULT 'other'",
+    "ALTER TABLE memories ADD COLUMN importance REAL DEFAULT 0.5",
+    "ALTER TABLE memories ADD COLUMN usage_count INTEGER DEFAULT 0",
+    "ALTER TABLE memories ADD COLUMN last_accessed TEXT",
+    "ALTER TABLE memories ADD COLUMN updated_at TEXT",
+)
+
+
 def init_db() -> None:
     """Initialize the database.
 
-    Verifies connectivity at startup. Table creation will be added alongside
-    the data models in a later milestone.
+    Verifies connectivity at startup, ensures the `memories` table exists, and
+    applies the additive Phase 3 column migrations idempotently.
     """
     with session() as conn:
         conn.execute("SELECT 1;")
@@ -62,8 +75,9 @@ def init_db() -> None:
                 tags TEXT
             )
         """)
-        try:
-            conn.execute("ALTER TABLE memories ADD COLUMN embedding TEXT")
-        except sqlite3.OperationalError:
-            # Column already exists
-            pass
+        for statement in _MEMORY_MIGRATIONS:
+            try:
+                conn.execute(statement)
+            except sqlite3.OperationalError:
+                # Column already exists — migration is a no-op.
+                pass

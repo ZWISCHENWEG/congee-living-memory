@@ -19,7 +19,7 @@ from app.services.ai.base import (
     ProviderHealth,
 )
 from app.services.ai.factory import get_ai_provider
-from app.services.ai.gemini import GeminiProvider
+from app.services.ai.gemini_chat import GeminiProvider
 
 __all__ = [
     "AIGenerationError",
