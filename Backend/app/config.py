@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # Comma-separated origins allowed by the frontend during development.
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
+    # --- Search ---
+    search_limit: int = 10
+    similarity_threshold: float = 0.72
+
     # --- AI providers: Gemini ---
     # Optional. Kept unset by default so the app boots without Gemini wired up
     # (the provider is not integrated yet). No key is hardcoded; only the model

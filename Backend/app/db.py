@@ -62,3 +62,8 @@ def init_db() -> None:
                 tags TEXT
             )
         """)
+        try:
+            conn.execute("ALTER TABLE memories ADD COLUMN embedding TEXT")
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass

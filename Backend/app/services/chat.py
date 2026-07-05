@@ -22,7 +22,7 @@ class ChatService:
         """Process a user message by retrieving memories and generating an AI response."""
         
         # 1. Search memories
-        memories = self.search_service.search(user_message)
+        memories = await self.search_service.search(user_message)
         logger.info("Retrieved %d memories for chat", len(memories))
         
         # 2. Build Prompt

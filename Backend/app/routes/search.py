@@ -6,9 +6,9 @@ router = APIRouter(tags=["search"])
 
 
 @router.get("/search", response_model=SearchResponse)
-def search_memories(
+async def search_memories(
     q: str = Query(..., min_length=1),
     search_service: SearchService = Depends(get_search_service)
 ) -> SearchResponse:
-    results = search_service.search(q)
+    results = await search_service.search(q)
     return SearchResponse(results=results)
